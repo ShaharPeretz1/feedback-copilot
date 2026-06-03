@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Feedback Copilot
 
-## Getting Started
+Agentic triage for customer feedback. Paste raw feedback (support tickets, NPS comments, reviews) and a multi-step Claude agent **classifies** it (sentiment, category, priority), **clusters** it into themes, and **drafts a reply** — surfaced in a React dashboard, persisted in PostgreSQL, with per-step traces and an eval harness.
 
-First, run the development server:
+Full-stack TypeScript: Next.js (App Router) UI + API routes, Prisma + PostgreSQL, Anthropic Claude.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Architecture
+
+```
+Paste feedback ─▶ POST /api/feedback ─▶ Postgres (status: NEW)
+                                              │
+Run triage ─▶ POST /api/agent/triage ─▶ triagePending()
+                                              │  per item, sequentially:
+                                              ├─ 1. classify   → sentiment / category / priority / summary
+                                              ├─ 2. assignTheme → reuse or create a theme (clustering)
+                                              └─ 3. draftReply  → suggested customer-facing reply
+                                              │  each step writes a TraceLog row
+                                              ▼
+Dashboard ◀─ GET /api/feedback, GET /api/themes ◀─ Postgres (status: TRIAGED)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Agent** — `lib/agent/triage.ts`. Each step uses forced tool-calling (`lib/agent/structured.ts`) for reliable structured JSON, and records latency + I/O to the `TraceLog` table for observability.
+- **Clustering** — items are triaged sequentially so each new theme is visible to the next item, letting the agent reuse themes instead of fragmenting them.
+- **Evals** — `scripts/eval.ts` runs the classifier over a labeled golden set (`evals/golden.json`) and reports category/sentiment accuracy, failing below an 80% threshold.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tech stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Layer    | Tech                                              |
+| -------- | ------------------------------------------------- |
+| Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind |
+| Backend  | Next.js API routes (TypeScript)                   |
+| Database | PostgreSQL via Prisma                             |
+| Agent    | Anthropic Claude (tool-calling for structured output) |
 
-## Learn More
+## Local development
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm install
+cp .env.example .env        # fill in DATABASE_URL + ANTHROPIC_API_KEY
+npm run db:push             # create tables
+npm run db:seed             # load sample feedback (optional)
+npm run dev                 # http://localhost:3000
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Then click **Run triage** in the UI (or `curl -X POST localhost:3000/api/agent/triage`).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Evals
 
-## Deploy on Vercel
+```bash
+npm run eval
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## API
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Method | Route                | Purpose                                  |
+| ------ | -------------------- | ---------------------------------------- |
+| `POST` | `/api/feedback`      | Ingest one or many raw feedback items    |
+| `GET`  | `/api/feedback`      | List feedback (filter by status/priority/theme) |
+| `POST` | `/api/agent/triage`  | Run the agent over all untriaged items   |
+| `GET`  | `/api/themes`        | Themes with counts + priority rollups    |
+
+## Deployment
+
+Deployed on Vercel with a Neon serverless Postgres database. Set `DATABASE_URL` and `ANTHROPIC_API_KEY` in the Vercel project env; `npm run build` runs `prisma generate` automatically.
