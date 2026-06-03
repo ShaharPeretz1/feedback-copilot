@@ -1,0 +1,86 @@
+// Feedback Copilot — Prisma schema
+// PostgreSQL (Neon in prod). Models the feedback triage pipeline:
+// raw Feedback -> agent classifies/summarizes -> clusters into a Theme -> drafts a reply.
+// TraceLog records each agent step for observability.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Sentiment {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+}
+
+enum Priority {
+  P0 // critical / blocking
+  P1 // high
+  P2 // medium
+  P3 // low
+}
+
+enum Category {
+  BUG
+  FEATURE_REQUEST
+  USABILITY
+  PERFORMANCE
+  BILLING
+  PRAISE
+  OTHER
+}
+
+enum FeedbackStatus {
+  NEW
+  TRIAGED
+}
+
+model Feedback {
+  id             String         @id @default(cuid())
+  source         String         @default("manual")
+  rawText        String
+  customerName   String?
+  status         FeedbackStatus @default(NEW)
+  sentiment      Sentiment?
+  category       Category?
+  priority       Priority?
+  summary        String?
+  suggestedReply String?
+  themeId        String?
+  theme          Theme?         @relation(fields: [themeId], references: [id])
+  createdAt      DateTime       @default(now())
+  processedAt    DateTime?
+  traces         TraceLog[]
+
+  @@index([status])
+  @@index([themeId])
+}
+
+model Theme {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  summary   String?
+  createdAt DateTime   @default(now())
+  feedback  Feedback[]
+}
+
+// Per-step agent trace for observability: which step ran, on what input,
+// what it returned, the model used, and how long it took.
+model TraceLog {
+  id         String   @id @default(cuid())
+  feedbackId String
+  feedback   Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  step       String // classify | assignTheme | draftReply
+  model      String?
+  latencyMs  Int?
+  input      String?
+  output     String?
+  createdAt  DateTime @default(now())
+
+  @@index([feedbackId])
+}
