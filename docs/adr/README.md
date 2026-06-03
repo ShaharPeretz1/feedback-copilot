@@ -9,8 +9,8 @@ the decision, what we chose, what we rejected, and the consequences we accept.
 | 0002 | Pin Prisma to v6 (not v7)                              | Accepted |
 | 0003 | PostgreSQL on Neon (serverless)                       | Accepted |
 | 0004 | Data model: Feedback / Theme / TraceLog               | Accepted |
-| 0005 | Multi-step agent with forced tool-calling             | Proposed |
-| 0006 | Use Claude Haiku as the triage model                  | Proposed |
+| 0005 | Multi-step agent with forced tool-calling             | Accepted |
+| 0006 | Use Claude Haiku as the triage model                  | Accepted |
 | 0007 | Eval harness with a golden set + accuracy gate        | Proposed |
 | 0008 | Deploy on Vercel                                       | Proposed |
 
