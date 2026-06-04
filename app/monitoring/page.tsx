@@ -42,6 +42,8 @@ export default function MonitoringPage() {
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [scanning, setScanning] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const query = useMemo(() => {
     const sp = new URLSearchParams();
@@ -64,6 +66,23 @@ export default function MonitoringPage() {
 
   const reload = async () => setEvents(await getEvents(query));
 
+  const runScan = async () => {
+    setScanning(true);
+    setNotice(null);
+    try {
+      const res = await fetch("/api/agent/monitor", { method: "POST" });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) setNotice(body?.error ?? "Monitor scan failed");
+      else
+        setNotice(
+          `Scanned ${body.checked} item(s): ${body.suspect} suspect classification(s), ${body.misuse} misuse flag(s).`
+        );
+      await reload();
+    } finally {
+      setScanning(false);
+    }
+  };
+
   const setStatus = async (id: string, status: MonitorStatus) => {
     await fetch(`/api/monitor/${id}`, {
       method: "PATCH",
@@ -80,13 +99,27 @@ export default function MonitoringPage() {
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">System monitoring</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Watches the triage system itself — runtime failures, suspect classifications,
-          accuracy drift, and misuse — separate from customer feedback.
-        </p>
+      <header className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">System monitoring</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Watches the triage system itself — runtime failures, suspect classifications,
+            accuracy drift, and misuse — separate from customer feedback.
+          </p>
+        </div>
+        <button
+          onClick={runScan}
+          disabled={scanning}
+          className="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {scanning ? "Scanning…" : "Run monitor scan"}
+        </button>
       </header>
+      {notice && (
+        <p className="mb-4 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600 ring-1 ring-slate-200">
+          {notice}
+        </p>
+      )}
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Shown" value={events.length} />
