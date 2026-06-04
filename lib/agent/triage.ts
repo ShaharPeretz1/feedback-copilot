@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { structuredCall } from "@/lib/agent/structured";
+import { recordRuntimeError } from "@/lib/monitor";
 import type { Sentiment, Category, Priority } from "@prisma/client";
 
 // ---- Step output types --------------------------------------------------
@@ -175,7 +176,11 @@ export async function triageOne(feedbackId: string) {
   return updated;
 }
 
-/** Triage every NEW feedback item, sequentially so themes accumulate. */
+/**
+ * Triage every NEW feedback item, sequentially so themes accumulate. A single bad
+ * item is logged as a RUNTIME_ERROR monitoring event and skipped, so one failure
+ * (e.g. a transient API error) doesn't abort the whole batch.
+ */
 export async function triagePending(limit = 50) {
   const pending = await prisma.feedback.findMany({
     where: { status: "NEW" },
@@ -185,8 +190,19 @@ export async function triagePending(limit = 50) {
   });
 
   const results = [];
+  let failed = 0;
   for (const p of pending) {
-    results.push(await triageOne(p.id));
+    try {
+      results.push(await triageOne(p.id));
+    } catch (err) {
+      failed++;
+      await recordRuntimeError({
+        title: "Triage failed for a feedback item",
+        error: err,
+        step: "triageOne",
+        feedbackId: p.id,
+      });
+    }
   }
-  return { processed: results.length, items: results };
+  return { processed: results.length, failed, items: results };
 }

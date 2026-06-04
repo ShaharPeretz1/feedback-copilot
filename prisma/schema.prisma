@@ -40,6 +40,26 @@ enum FeedbackStatus {
   TRIAGED
 }
 
+// System-monitoring taxonomy. Watches the app itself, not customer sentiment.
+enum MonitorEventType {
+  RUNTIME_ERROR // a triage step / API call threw or timed out
+  SUSPECT_CLASSIFICATION // an LLM-judge thinks a triage label is likely wrong
+  ACCURACY_DRIFT // the eval golden set accuracy dropped
+  MISUSE // spam / prompt-injection / abusive / off-topic input
+}
+
+enum MonitorSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum MonitorStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
 model Feedback {
   id             String         @id @default(cuid())
   source         String         @default("manual")
@@ -56,6 +76,7 @@ model Feedback {
   createdAt      DateTime       @default(now())
   processedAt    DateTime?
   traces         TraceLog[]
+  monitorEvents  MonitorEvent[]
 
   @@index([status])
   @@index([themeId])
@@ -85,4 +106,23 @@ model TraceLog {
   createdAt  DateTime @default(now())
 
   @@index([feedbackId])
+}
+
+// A system-health event surfaced on the monitoring dashboard. Some events are tied
+// to a specific feedback row (suspect classification, misuse); others are global
+// (accuracy drift, a route-level runtime error), hence feedbackId is optional.
+model MonitorEvent {
+  id         String           @id @default(cuid())
+  type       MonitorEventType
+  severity   MonitorSeverity  @default(WARNING)
+  status     MonitorStatus    @default(OPEN)
+  title      String
+  detail     String? // JSON-stringified context (mirrors TraceLog.input/output)
+  feedbackId String?
+  feedback   Feedback?        @relation(fields: [feedbackId], references: [id], onDelete: SetNull)
+  createdAt  DateTime         @default(now())
+  resolvedAt DateTime?
+
+  @@index([type])
+  @@index([status])
 }
