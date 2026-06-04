@@ -124,6 +124,8 @@ export default function Home() {
       const res = await fetch("/api/agent/triage", { method: "POST" });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) setError(body?.error ?? "Triage failed");
+      else if (body?.failed > 0)
+        setError(`${body.failed} item(s) failed to triage — see Monitoring.`);
       await reload();
     } finally {
       setTriaging(false);

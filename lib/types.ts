@@ -72,3 +72,44 @@ export const SENTIMENT_STYLE: Record<string, string> = {
 export function prettyEnum(value: string): string {
   return value.replace(/_/g, " ");
 }
+
+// ---- Monitoring -----------------------------------------------------------
+
+export type MonitorEventType =
+  | "RUNTIME_ERROR"
+  | "SUSPECT_CLASSIFICATION"
+  | "ACCURACY_DRIFT"
+  | "MISUSE";
+export type MonitorSeverity = "INFO" | "WARNING" | "CRITICAL";
+export type MonitorStatus = "OPEN" | "ACKNOWLEDGED" | "RESOLVED";
+
+export type MonitorEvent = {
+  id: string;
+  type: MonitorEventType;
+  severity: MonitorSeverity;
+  status: MonitorStatus;
+  title: string;
+  detail: string | null;
+  feedbackId: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+};
+
+export const MONITOR_TYPE_LABEL: Record<MonitorEventType, string> = {
+  RUNTIME_ERROR: "Runtime error",
+  SUSPECT_CLASSIFICATION: "Suspect classification",
+  ACCURACY_DRIFT: "Accuracy drift",
+  MISUSE: "Misuse / bad input",
+};
+
+export const SEVERITY_STYLE: Record<string, string> = {
+  CRITICAL: "bg-red-100 text-red-800 ring-red-600/20",
+  WARNING: "bg-amber-100 text-amber-800 ring-amber-600/20",
+  INFO: "bg-slate-100 text-slate-600 ring-slate-500/20",
+};
+
+export const MONITOR_STATUS_STYLE: Record<string, string> = {
+  OPEN: "bg-rose-50 text-rose-700 ring-rose-600/20",
+  ACKNOWLEDGED: "bg-amber-50 text-amber-700 ring-amber-600/20",
+  RESOLVED: "bg-green-50 text-green-700 ring-green-600/20",
+};
