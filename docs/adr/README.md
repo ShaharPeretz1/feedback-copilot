@@ -12,6 +12,6 @@ the decision, what we chose, what we rejected, and the consequences we accept.
 | 0005 | Multi-step agent with forced tool-calling             | Accepted |
 | 0006 | Use Claude Haiku as the triage model                  | Accepted |
 | 0007 | Eval harness with a golden set + accuracy gate        | Accepted |
-| 0008 | Deploy on Vercel                                       | Proposed |
+| 0008 | Deploy on Vercel                                       | Accepted |
 
 (Statuses move from Proposed to Accepted as each PR merges.)

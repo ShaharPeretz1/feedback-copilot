@@ -61,4 +61,8 @@ npm run eval
 
 ## Deployment
 
-Deployed on Vercel with a Neon serverless Postgres database. Set `DATABASE_URL` and `ANTHROPIC_API_KEY` in the Vercel project env; `npm run build` runs `prisma generate` automatically.
+**Live:** https://feedback-copilot.vercel.app
+
+Deployed on Vercel with a Neon serverless Postgres database (provisioned via the Vercel Marketplace integration, which injects `DATABASE_URL`). `npm run build` runs `prisma generate` automatically, and the build needs no live DB (the dashboard is client-rendered and all API routes are `force-dynamic`). See [ADR-0008](docs/adr/0008-deploy-vercel.md).
+
+> The triage agent needs a **funded `ANTHROPIC_API_KEY`** set in the Vercel project env (the Anthropic API is billed separately from any Claude subscription). Without it, the dashboard and feedback/theme endpoints work fully against Neon, while `POST /api/agent/triage` returns a clean `401` until a real key is added.
