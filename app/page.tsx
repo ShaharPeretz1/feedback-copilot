@@ -1,85 +1,104 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Badge } from "@/components/Badge";
+import {
+  CATEGORIES,
+  PRIORITIES,
+  PRIORITY_STYLE,
+  SENTIMENTS,
+  SENTIMENT_STYLE,
+  prettyEnum,
+  type FeedbackItem,
+  type ThemeRollup,
+} from "@/lib/types";
 
-type Theme = { id: string; name: string };
-type FeedbackItem = {
-  id: string;
-  source: string;
-  rawText: string;
-  customerName: string | null;
-  status: "NEW" | "TRIAGED";
-  sentiment: "POSITIVE" | "NEUTRAL" | "NEGATIVE" | null;
-  category: string | null;
-  priority: "P0" | "P1" | "P2" | "P3" | null;
-  summary: string | null;
-  suggestedReply: string | null;
-  theme: Theme | null;
-  createdAt: string;
-};
-type ThemeRollup = {
-  id: string;
-  name: string;
-  count: number;
-  negative: number;
-  topPriority: string | null;
-};
+const ALL = "";
 
-const PRIORITY_STYLE: Record<string, string> = {
-  P0: "bg-red-100 text-red-800 ring-red-600/20",
-  P1: "bg-orange-100 text-orange-800 ring-orange-600/20",
-  P2: "bg-amber-100 text-amber-800 ring-amber-600/20",
-  P3: "bg-slate-100 text-slate-600 ring-slate-500/20",
-};
-const SENTIMENT_STYLE: Record<string, string> = {
-  POSITIVE: "bg-green-100 text-green-800 ring-green-600/20",
-  NEUTRAL: "bg-slate-100 text-slate-600 ring-slate-500/20",
-  NEGATIVE: "bg-rose-100 text-rose-800 ring-rose-600/20",
-};
-
-function Badge({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
-        className ?? "bg-slate-100 text-slate-600 ring-slate-500/20"
-      }`}
-    >
-      {children}
-    </span>
-  );
+// Stateless fetchers — kept out of the component so effects can resolve them and
+// set state inside a .then() callback (the data-fetch pattern react-hooks allows).
+async function getThemes(): Promise<ThemeRollup[]> {
+  const t = await fetch("/api/themes").then((r) => r.json());
+  return t.themes ?? [];
+}
+async function getFeedback(query: string): Promise<FeedbackItem[]> {
+  const f = await fetch(`/api/feedback?${query}`).then((r) => r.json());
+  return f.items ?? [];
 }
 
 export default function Home() {
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [themes, setThemes] = useState<ThemeRollup[]>([]);
   const [draft, setDraft] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [triaging, setTriaging] = useState(false);
-  const [filterPriority, setFilterPriority] = useState<string>("");
-  const [filterTheme, setFilterTheme] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [f, t] = await Promise.all([
-        fetch("/api/feedback").then((r) => r.json()),
-        fetch("/api/themes").then((r) => r.json()),
-      ]);
-      setItems(f.items ?? []);
-      setThemes(t.themes ?? []);
-    } finally {
-      setLoading(false);
-    }
+  // Filters (server-driven).
+  const [status, setStatus] = useState(ALL);
+  const [priority, setPriority] = useState(ALL);
+  const [sentiment, setSentiment] = useState(ALL);
+  const [category, setCategory] = useState(ALL);
+  const [themeId, setThemeId] = useState(ALL);
+  const [sort, setSort] = useState<"recent" | "priority">("recent");
+  const [searchInput, setSearchInput] = useState("");
+  const [q, setQ] = useState("");
+
+  // Debounce the search box so we don't refetch on every keystroke.
+  useEffect(() => {
+    const id = setTimeout(() => setQ(searchInput.trim()), 300);
+    return () => clearTimeout(id);
+  }, [searchInput]);
+
+  const query = useMemo(() => {
+    const sp = new URLSearchParams();
+    if (status) sp.set("status", status);
+    if (priority) sp.set("priority", priority);
+    if (sentiment) sp.set("sentiment", sentiment);
+    if (category) sp.set("category", category);
+    if (themeId) sp.set("themeId", themeId);
+    if (q) sp.set("q", q);
+    sp.set("sort", sort);
+    return sp.toString();
+  }, [status, priority, sentiment, category, themeId, q, sort]);
+
+  const activeTheme = useMemo(
+    () => themes.find((t) => t.id === themeId) ?? null,
+    [themes, themeId]
+  );
+
+  // Load themes once on mount.
+  useEffect(() => {
+    let cancelled = false;
+    getThemes().then((t) => {
+      if (!cancelled) setThemes(t);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
+  // Reload the feedback list whenever a filter changes.
   useEffect(() => {
-    load();
-  }, [load]);
+    let cancelled = false;
+    getFeedback(query).then((list) => {
+      if (cancelled) return;
+      setItems(list);
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [query]);
+
+  const reload = async () => {
+    const [t, list] = await Promise.all([getThemes(), getFeedback(query)]);
+    setThemes(t);
+    setItems(list);
+  };
 
   const ingest = async () => {
     setError(null);
-    // Split on blank lines so a paster can drop in several items at once.
     const blocks = draft
       .split(/\n\s*\n/)
       .map((b) => b.trim())
@@ -95,7 +114,7 @@ export default function Home() {
       return;
     }
     setDraft("");
-    await load();
+    await reload();
   };
 
   const runTriage = async () => {
@@ -105,34 +124,40 @@ export default function Home() {
       const res = await fetch("/api/agent/triage", { method: "POST" });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) setError(body?.error ?? "Triage failed");
-      await load();
+      await reload();
     } finally {
       setTriaging(false);
     }
   };
 
   const newCount = useMemo(() => items.filter((i) => i.status === "NEW").length, [items]);
-  const visible = useMemo(
-    () =>
-      items.filter(
-        (i) =>
-          (!filterPriority || i.priority === filterPriority) &&
-          (!filterTheme || i.theme?.id === filterTheme)
-      ),
-    [items, filterPriority, filterTheme]
+  const hasFilters = Boolean(
+    status || priority || sentiment || category || themeId || q || sort !== "recent"
   );
+
+  const clearFilters = () => {
+    setStatus(ALL);
+    setPriority(ALL);
+    setSentiment(ALL);
+    setCategory(ALL);
+    setThemeId(ALL);
+    setSearchInput("");
+    setQ("");
+    setSort("recent");
+  };
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Feedback Copilot</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Feedback triage</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Agentic triage for customer feedback: classify &rarr; cluster &rarr; prioritize &rarr; draft a reply.
+          Classify &rarr; cluster &rarr; prioritize &rarr; draft a reply. Issues are ranked by
+          impact (how often they recur &times; how severe they are).
         </p>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left: ingest + themes */}
+        {/* Left: ingest + ranked themes */}
         <section className="space-y-6 lg:col-span-1">
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-semibold text-slate-900">Add feedback</h2>
@@ -165,16 +190,21 @@ export default function Home() {
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-900">Themes</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-900">Top issues</h2>
+              <span className="text-xs text-slate-400">by impact</span>
+            </div>
             {themes.length === 0 ? (
-              <p className="mt-2 text-xs text-slate-400">Run triage to cluster feedback into themes.</p>
+              <p className="mt-2 text-xs text-slate-400">
+                Run triage to cluster feedback into ranked themes.
+              </p>
             ) : (
               <ul className="mt-2 space-y-1">
                 <li>
                   <button
-                    onClick={() => setFilterTheme("")}
+                    onClick={() => setThemeId(ALL)}
                     className={`w-full rounded-md px-2 py-1 text-left text-xs ${
-                      !filterTheme ? "bg-slate-100 font-medium text-slate-900" : "text-slate-600 hover:bg-slate-50"
+                      !themeId ? "bg-slate-100 font-medium text-slate-900" : "text-slate-600 hover:bg-slate-50"
                     }`}
                   >
                     All themes
@@ -183,20 +213,29 @@ export default function Home() {
                 {themes.map((t) => (
                   <li key={t.id}>
                     <button
-                      onClick={() => setFilterTheme(t.id === filterTheme ? "" : t.id)}
-                      className={`flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-xs ${
-                        filterTheme === t.id
-                          ? "bg-slate-100 font-medium text-slate-900"
-                          : "text-slate-600 hover:bg-slate-50"
+                      onClick={() => setThemeId(t.id === themeId ? ALL : t.id)}
+                      className={`w-full rounded-md px-2 py-1.5 text-left ${
+                        themeId === t.id ? "bg-slate-100" : "hover:bg-slate-50"
                       }`}
                     >
-                      <span className="truncate">{t.name}</span>
-                      <span className="ml-2 flex shrink-0 items-center gap-1">
-                        {t.topPriority && (
-                          <Badge className={PRIORITY_STYLE[t.topPriority]}>{t.topPriority}</Badge>
-                        )}
-                        <span className="tabular-nums text-slate-400">{t.count}</span>
-                      </span>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate text-xs font-medium text-slate-800">{t.name}</span>
+                        <span className="flex shrink-0 items-center gap-1">
+                          {t.topPriority && (
+                            <Badge className={PRIORITY_STYLE[t.topPriority]}>{t.topPriority}</Badge>
+                          )}
+                          <span
+                            className="rounded bg-indigo-50 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-indigo-700"
+                            title="Impact = recurrence × severity"
+                          >
+                            {t.impactScore}
+                          </span>
+                        </span>
+                      </div>
+                      <div className="mt-0.5 text-[11px] text-slate-400">
+                        {t.count} item{t.count === 1 ? "" : "s"}
+                        {t.negative > 0 && <span className="text-rose-500"> · {t.negative} neg</span>}
+                      </div>
                     </button>
                   </li>
                 ))}
@@ -205,40 +244,69 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Right: feedback list */}
+        {/* Right: filter bar + feedback list */}
         <section className="lg:col-span-2">
-          <div className="mb-3 flex items-center gap-2">
-            <span className="text-xs font-medium text-slate-500">Priority:</span>
-            {["", "P0", "P1", "P2", "P3"].map((p) => (
-              <button
-                key={p || "all"}
-                onClick={() => setFilterPriority(p)}
-                className={`rounded-md px-2 py-1 text-xs ${
-                  filterPriority === p
-                    ? "bg-slate-900 text-white"
-                    : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
-                }`}
+          <div className="mb-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search feedback…"
+                className="min-w-[10rem] flex-1 rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-slate-500"
+              />
+              <FilterSelect label="Status" value={status} onChange={setStatus} options={["NEW", "TRIAGED"]} />
+              <FilterSelect label="Priority" value={priority} onChange={setPriority} options={PRIORITIES} />
+              <FilterSelect label="Sentiment" value={sentiment} onChange={setSentiment} options={SENTIMENTS} />
+              <FilterSelect
+                label="Category"
+                value={category}
+                onChange={setCategory}
+                options={CATEGORIES}
+                render={prettyEnum}
+              />
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as "recent" | "priority")}
+                className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 outline-none focus:border-slate-500"
               >
-                {p || "All"}
-              </button>
-            ))}
-            <span className="ml-auto text-xs text-slate-400">
-              {loading ? "Loading…" : `${visible.length} shown`}
-            </span>
+                <option value="recent">Sort: Recent</option>
+                <option value="priority">Sort: Priority</option>
+              </select>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              {activeTheme && (
+                <Badge className="bg-indigo-50 text-indigo-700 ring-indigo-600/20">
+                  theme: {activeTheme.name}
+                </Badge>
+              )}
+              {hasFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="text-[11px] font-medium text-slate-500 underline-offset-2 hover:underline"
+                >
+                  Clear filters
+                </button>
+              )}
+              <span className="ml-auto text-xs text-slate-400">
+                {loading ? "Loading…" : `${items.length} shown`}
+              </span>
+            </div>
           </div>
 
           <div className="space-y-3">
-            {visible.length === 0 && !loading && (
+            {items.length === 0 && !loading && (
               <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-400">
-                No feedback yet. Add some on the left, then run triage.
+                {hasFilters
+                  ? "No feedback matches these filters."
+                  : "No feedback yet. Add some on the left, then run triage."}
               </div>
             )}
-            {visible.map((i) => (
+            {items.map((i) => (
               <article key={i.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex flex-wrap items-center gap-2">
                   {i.priority && <Badge className={PRIORITY_STYLE[i.priority]}>{i.priority}</Badge>}
                   {i.sentiment && <Badge className={SENTIMENT_STYLE[i.sentiment]}>{i.sentiment}</Badge>}
-                  {i.category && <Badge>{i.category.replace("_", " ")}</Badge>}
+                  {i.category && <Badge>{prettyEnum(i.category)}</Badge>}
                   {i.theme && (
                     <Badge className="bg-indigo-50 text-indigo-700 ring-indigo-600/20">{i.theme.name}</Badge>
                   )}
@@ -266,5 +334,34 @@ export default function Home() {
         </section>
       </div>
     </main>
+  );
+}
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+  render,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  render?: (v: string) => string;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 outline-none focus:border-slate-500"
+    >
+      <option value="">{label}: All</option>
+      {options.map((o) => (
+        <option key={o} value={o}>
+          {render ? render(o) : o}
+        </option>
+      ))}
+    </select>
   );
 }

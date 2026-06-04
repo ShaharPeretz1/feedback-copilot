@@ -59,6 +59,8 @@ model Feedback {
 
   @@index([status])
   @@index([themeId])
+  @@index([category])
+  @@index([priority])
 }
 
 model Theme {
