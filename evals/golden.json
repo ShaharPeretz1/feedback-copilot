@@ -1,0 +1,62 @@
+[
+  {
+    "rawText": "The CSV export button spins forever and never downloads anything on Safari 17.",
+    "expected": { "category": "BUG", "sentiment": "NEGATIVE" }
+  },
+  {
+    "rawText": "Please add a dark mode, my eyes are killing me during night shifts.",
+    "expected": { "category": "FEATURE_REQUEST", "sentiment": "NEUTRAL" }
+  },
+  {
+    "rawText": "Honestly the new dashboard is gorgeous and loads way faster than before. Great work team!",
+    "expected": { "category": "PRAISE", "sentiment": "POSITIVE" }
+  },
+  {
+    "rawText": "It took me 20 minutes to figure out where the settings page even is. The nav is super confusing.",
+    "expected": { "category": "USABILITY", "sentiment": "NEGATIVE" }
+  },
+  {
+    "rawText": "Reports take over 30 seconds to generate when I have more than a few hundred rows. Way too slow.",
+    "expected": { "category": "PERFORMANCE", "sentiment": "NEGATIVE" }
+  },
+  {
+    "rawText": "I was charged twice this month and the invoice doesn't match my plan. Please refund the duplicate.",
+    "expected": { "category": "BILLING", "sentiment": "NEGATIVE" }
+  },
+  {
+    "rawText": "Can we get a Slack integration so alerts show up in our team channel?",
+    "expected": { "category": "FEATURE_REQUEST", "sentiment": "NEUTRAL" }
+  },
+  {
+    "rawText": "The whole app is down, I'm getting a 500 error on every page and can't access anything.",
+    "expected": { "category": "BUG", "sentiment": "NEGATIVE" }
+  },
+  {
+    "rawText": "Your support team got back to me in five minutes and fixed everything. Best support I've had.",
+    "expected": { "category": "PRAISE", "sentiment": "POSITIVE" }
+  },
+  {
+    "rawText": "The onboarding wizard skips a step and I never got prompted to connect my data source.",
+    "expected": { "category": "USABILITY", "sentiment": "NEGATIVE" }
+  },
+  {
+    "rawText": "Search results are paginated weirdly and the page jumps to the top every time I click next.",
+    "expected": { "category": "BUG", "sentiment": "NEGATIVE" }
+  },
+  {
+    "rawText": "It would be nice to bulk-assign tickets instead of clicking each one individually.",
+    "expected": { "category": "FEATURE_REQUEST", "sentiment": "NEUTRAL" }
+  },
+  {
+    "rawText": "Loading the analytics tab freezes my browser tab for a good 10 seconds every time.",
+    "expected": { "category": "PERFORMANCE", "sentiment": "NEGATIVE" }
+  },
+  {
+    "rawText": "My annual discount wasn't applied at renewal and now I'm paying full price.",
+    "expected": { "category": "BILLING", "sentiment": "NEGATIVE" }
+  },
+  {
+    "rawText": "The mobile layout is clean and I can finally approve requests from my phone. Love it.",
+    "expected": { "category": "PRAISE", "sentiment": "POSITIVE" }
+  }
+]
