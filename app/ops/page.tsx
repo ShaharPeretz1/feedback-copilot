@@ -91,6 +91,15 @@ export default function OpsPage() {
     await refresh();
   };
 
+  const exportTask = async (id: string) => {
+    setNotice(null);
+    const res = await fetch(`/api/tasks/${id}/export`, { method: "POST" });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) setNotice(body?.error ?? "Export failed");
+    else setNotice(body?.alreadyExported ? "Already exported." : "Exported to GitHub Issues.");
+    await refresh();
+  };
+
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8">
       <header className="mb-6 flex items-start justify-between gap-4">
@@ -205,7 +214,7 @@ export default function OpsPage() {
                   </option>
                 ))}
               </select>
-              {t.externalUrl && (
+              {t.externalUrl ? (
                 <a
                   href={t.externalUrl}
                   target="_blank"
@@ -214,6 +223,13 @@ export default function OpsPage() {
                 >
                   View issue ↗
                 </a>
+              ) : (
+                <button
+                  onClick={() => exportTask(t.id)}
+                  className="rounded-md bg-white px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                >
+                  Export to GitHub
+                </button>
               )}
             </div>
           </article>
