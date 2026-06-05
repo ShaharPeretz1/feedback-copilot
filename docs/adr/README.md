@@ -24,6 +24,7 @@ the [CHANGELOG](../../CHANGELOG.md).
 | [0013](0013-ops-tasks.md) | Ops layer: Task model + generation                       | Accepted | [#13](https://github.com/ShaharPeretz1/feedback-copilot/pull/13) |
 | [0014](0014-github-export.md) | Export tasks to GitHub Issues                        | Accepted | [#14](https://github.com/ShaharPeretz1/feedback-copilot/pull/14) |
 | [0015](0015-tests-and-ci.md) | Unit tests (Vitest) + GitHub Actions CI               | Accepted | [#18](https://github.com/ShaharPeretz1/feedback-copilot/pull/18) |
+| [0016](0016-trace-timeline.md) | Surface the agent trace timeline in the UI          | Accepted | [#19](https://github.com/ShaharPeretz1/feedback-copilot/pull/19) |
 
 (Statuses move from Proposed to Accepted as each PR merges.)
 

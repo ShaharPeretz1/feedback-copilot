@@ -30,12 +30,6 @@ Live: <https://feedback-copilot.vercel.app>
 
 ## Process & docs
 
-### [PR #18](https://github.com/ShaharPeretz1/feedback-copilot/pull/18) — Unit tests + GitHub Actions CI · `pending`
-ADR: [0015](docs/adr/0015-tests-and-ci.md) · Status: **Merged**
-- Vitest unit tests for `lib/score.ts` (impact ranking) and `lib/eval.ts` scoring (mocked
-  classify — no API/DB). `npm test`.
-- `.github/workflows/ci.yml` gates every PR on `tsc → lint → test → build` with dummy env.
-
 ### [PR #17](https://github.com/ShaharPeretz1/feedback-copilot/pull/17) — Demo seed for all three dashboards
 ADR: — · Status: **Merged · Live**
 - `scripts/seed-demo.ts` (`npm run db:seed:demo`) populates pre-triaged feedback across 6
@@ -54,6 +48,21 @@ ADR: — · Status: **Merged**
 ADR: — · Status: **Merged**
 - Added this CHANGELOG as the master ledger; cross-linked every ADR to its PR and documented
   the new-ADR process.
+
+---
+
+## Milestone 4 — Hardening & observability (PR #18–#19)
+
+### [PR #19](https://github.com/ShaharPeretz1/feedback-copilot/pull/19) — Agent trace timeline
+ADR: [0016](docs/adr/0016-trace-timeline.md) · Status: **Merged · Live**
+- `GET /api/traces?feedbackId=` + an "Agent trace" toggle on each triaged card showing the
+  per-step timeline (step, model, latency, total, collapsible I/O) from the existing
+  `TraceLog`. Helpers in `lib/trace.ts` (unit-tested); demo seed now writes traces.
+
+### [PR #18](https://github.com/ShaharPeretz1/feedback-copilot/pull/18) — Unit tests + GitHub Actions CI
+ADR: [0015](docs/adr/0015-tests-and-ci.md) · Status: **Merged**
+- Vitest unit tests for `lib/score.ts` + `lib/eval.ts` scoring (mocked classify). CI gates
+  every PR on `tsc → lint → test → build`.
 
 ---
 
