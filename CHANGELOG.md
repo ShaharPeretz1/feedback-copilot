@@ -30,6 +30,12 @@ Live: <https://feedback-copilot.vercel.app>
 
 ## Process & docs
 
+### [PR #18](https://github.com/ShaharPeretz1/feedback-copilot/pull/18) — Unit tests + GitHub Actions CI · `pending`
+ADR: [0015](docs/adr/0015-tests-and-ci.md) · Status: **Merged**
+- Vitest unit tests for `lib/score.ts` (impact ranking) and `lib/eval.ts` scoring (mocked
+  classify — no API/DB). `npm test`.
+- `.github/workflows/ci.yml` gates every PR on `tsc → lint → test → build` with dummy env.
+
 ### [PR #17](https://github.com/ShaharPeretz1/feedback-copilot/pull/17) — Demo seed for all three dashboards
 ADR: — · Status: **Merged · Live**
 - `scripts/seed-demo.ts` (`npm run db:seed:demo`) populates pre-triaged feedback across 6
