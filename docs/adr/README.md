@@ -18,6 +18,6 @@ the decision, what we chose, what we rejected, and the consequences we accept.
 | 0011 | LLM-judge for suspect classifications & misuse        | Accepted |
 | 0012 | Accuracy drift via the eval golden set                | Accepted |
 | 0013 | Ops layer: Task model + generation                    | Accepted |
-| 0014 | Export tasks to GitHub Issues                         | Proposed |
+| 0014 | Export tasks to GitHub Issues                         | Accepted |
 
 (Statuses move from Proposed to Accepted as each PR merges.)
