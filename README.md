@@ -46,7 +46,8 @@ Dashboard ◀─ GET /api/feedback, GET /api/themes ◀─ Postgres (status: TRI
 npm install
 cp .env.example .env        # fill in DATABASE_URL + ANTHROPIC_API_KEY
 npm run db:push             # create tables
-npm run db:seed             # load sample feedback (optional)
+npm run db:seed             # load sample feedback (12 untriaged items)
+npm run db:seed:demo        # OR load a full pre-triaged demo (themes, monitoring events, tasks)
 npm run dev                 # http://localhost:3000
 ```
 
