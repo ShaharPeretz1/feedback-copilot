@@ -32,6 +32,13 @@ export function impactScore(feedback: ScorableFeedback[]): number {
   return Math.round(raw * 10) / 10;
 }
 
+// Impact for a monitor-event-sourced task, so events and themes rank on one scale.
+const SEVERITY_IMPACT: Record<string, number> = { CRITICAL: 10, WARNING: 4, INFO: 1 };
+
+export function severityImpact(severity: string): number {
+  return SEVERITY_IMPACT[severity] ?? 1;
+}
+
 /** Count occurrences of each non-null value (e.g. category or sentiment mix). */
 export function tally(values: (string | null)[]): Record<string, number> {
   const out: Record<string, number> = {};

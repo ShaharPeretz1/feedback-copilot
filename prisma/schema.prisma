@@ -60,6 +60,24 @@ enum MonitorStatus {
   RESOLVED
 }
 
+enum TaskEffort {
+  S
+  M
+  L
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  DISMISSED
+}
+
+enum TaskSource {
+  FEEDBACK_THEME
+  MONITOR_EVENT
+}
+
 model Feedback {
   id             String         @id @default(cuid())
   source         String         @default("manual")
@@ -124,5 +142,26 @@ model MonitorEvent {
   resolvedAt DateTime?
 
   @@index([type])
+  @@index([status])
+}
+
+// An actionable engineering task generated from a feedback theme or a monitoring
+// event. The ops dashboard ranks these by impactScore and can export them to GitHub.
+model Task {
+  id             String     @id @default(cuid())
+  title          String
+  description    String?
+  source         TaskSource
+  severity       Priority   @default(P2) // reuse the feedback priority scale
+  effort         TaskEffort @default(M)
+  impactScore    Float      @default(0)
+  status         TaskStatus @default(TODO)
+  area           String? // suggested owner area, e.g. "Frontend"
+  themeId        String? // set when source = FEEDBACK_THEME
+  monitorEventId String? // set when source = MONITOR_EVENT
+  externalUrl    String? // GitHub issue URL after export
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
   @@index([status])
 }

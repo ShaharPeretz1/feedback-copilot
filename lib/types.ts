@@ -113,3 +113,47 @@ export const MONITOR_STATUS_STYLE: Record<string, string> = {
   ACKNOWLEDGED: "bg-amber-50 text-amber-700 ring-amber-600/20",
   RESOLVED: "bg-green-50 text-green-700 ring-green-600/20",
 };
+
+// ---- Ops / tasks ----------------------------------------------------------
+
+export type TaskEffort = "S" | "M" | "L";
+export type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE" | "DISMISSED";
+export type TaskSource = "FEEDBACK_THEME" | "MONITOR_EVENT";
+
+export type Task = {
+  id: string;
+  title: string;
+  description: string | null;
+  source: TaskSource;
+  severity: Priority;
+  effort: TaskEffort;
+  impactScore: number;
+  status: TaskStatus;
+  area: string | null;
+  themeId: string | null;
+  monitorEventId: string | null;
+  externalUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export const TASK_STATUS_STYLE: Record<string, string> = {
+  TODO: "bg-slate-100 text-slate-600 ring-slate-500/20",
+  IN_PROGRESS: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  DONE: "bg-green-50 text-green-700 ring-green-600/20",
+  DISMISSED: "bg-slate-50 text-slate-400 ring-slate-300/20",
+};
+
+export const EFFORT_STYLE: Record<string, string> = {
+  S: "bg-green-50 text-green-700 ring-green-600/20",
+  M: "bg-amber-50 text-amber-700 ring-amber-600/20",
+  L: "bg-orange-50 text-orange-700 ring-orange-600/20",
+};
+
+export type OpsSummary = {
+  tasks: { open: number; todo: number; inProgress: number; done: number; bySeverity: Record<string, number> };
+  onFire: number;
+  topThemes: { id: string; name: string; impactScore: number; count: number }[];
+  monitorOpenByType: Record<string, number>;
+  latestDrift: { categoryAccuracy: number; sentimentAccuracy: number; at: string } | null;
+};
