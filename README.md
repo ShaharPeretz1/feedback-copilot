@@ -10,6 +10,8 @@ Three dashboards:
 
 Full-stack TypeScript: Next.js (App Router) UI + API routes, Prisma + PostgreSQL, Anthropic Claude.
 
+**Tracking every change:** the [CHANGELOG](CHANGELOG.md) is the master ledger (PR → ADR → what shipped → live status); the [ADR index](docs/adr/README.md) records every significant decision and links it to its PR.
+
 ## Architecture
 
 ```
