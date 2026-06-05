@@ -1,71 +1,38 @@
 /**
- * Eval harness for the classify step.
+ * Eval harness for the classify step (CLI).
  *
  * Runs the agent's classifier over a labeled golden set and reports category +
- * sentiment accuracy. This is the observability/quality gate: regressions in the
- * prompt or model show up as an accuracy drop before they reach the UI.
+ * sentiment accuracy. Shares its scoring with the drift route (lib/eval.ts) so the
+ * CLI and the in-app monitor never diverge.
  *
- *   npx tsx scripts/eval.ts
+ *   npm run eval
  *
- * Requires ANTHROPIC_API_KEY in the environment.
+ * Requires ANTHROPIC_API_KEY in the environment (loaded from .env).
  */
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { classify } from "@/lib/agent/triage";
-
-type GoldenItem = {
-  rawText: string;
-  expected: { category: string; sentiment: string };
-};
+import { runEval, EVAL_THRESHOLD, GOLDEN } from "@/lib/eval";
 
 async function main() {
-  const golden: GoldenItem[] = JSON.parse(
-    readFileSync(join(process.cwd(), "evals", "golden.json"), "utf8")
-  );
+  console.log(`\nRunning classify eval over ${GOLDEN.length} golden items...\n`);
 
-  let catCorrect = 0;
-  let sentCorrect = 0;
-  let totalLatency = 0;
-  const misses: string[] = [];
+  const result = await runEval();
 
-  console.log(`\nRunning classify eval over ${golden.length} golden items...\n`);
-
-  for (const [i, item] of golden.entries()) {
-    const { data, latencyMs } = await classify(item.rawText);
-    totalLatency += latencyMs;
-    const catOk = data.category === item.expected.category;
-    const sentOk = data.sentiment === item.expected.sentiment;
-    if (catOk) catCorrect++;
-    if (sentOk) sentCorrect++;
-
-    const mark = catOk && sentOk ? "PASS" : "MISS";
-    console.log(
-      `${String(i + 1).padStart(2)}. [${mark}] cat ${data.category}` +
-        `${catOk ? "" : ` (exp ${item.expected.category})`}` +
-        ` | sent ${data.sentiment}${sentOk ? "" : ` (exp ${item.expected.sentiment})`}` +
-        ` | ${latencyMs}ms`
-    );
-    if (!catOk || !sentOk) misses.push(item.rawText.slice(0, 60));
-  }
-
-  const n = golden.length;
-  const catAcc = ((catCorrect / n) * 100).toFixed(1);
-  const sentAcc = ((sentCorrect / n) * 100).toFixed(1);
-
-  console.log("\n--- Results ---");
-  console.log(`Category accuracy : ${catCorrect}/${n}  (${catAcc}%)`);
-  console.log(`Sentiment accuracy: ${sentCorrect}/${n}  (${sentAcc}%)`);
-  console.log(`Avg latency       : ${Math.round(totalLatency / n)}ms`);
-  if (misses.length) {
+  const pct = (x: number) => (x * 100).toFixed(1);
+  console.log("--- Results ---");
+  console.log(`Category accuracy : ${result.categoryCorrect}/${result.n}  (${pct(result.categoryAccuracy)}%)`);
+  console.log(`Sentiment accuracy: ${result.sentimentCorrect}/${result.n}  (${pct(result.sentimentAccuracy)}%)`);
+  console.log(`Avg latency       : ${result.avgLatencyMs}ms`);
+  if (result.misses.length) {
     console.log("\nMisses:");
-    misses.forEach((m) => console.log(`  - ${m}...`));
+    for (const m of result.misses) {
+      const cat = m.gotCategory === m.expCategory ? "" : ` cat ${m.gotCategory}≠${m.expCategory}`;
+      const sent = m.gotSentiment === m.expSentiment ? "" : ` sent ${m.gotSentiment}≠${m.expSentiment}`;
+      console.log(`  - ${m.rawText.slice(0, 56)}…${cat}${sent}`);
+    }
   }
   console.log("");
 
-  // Fail CI if quality drops below threshold.
-  const THRESHOLD = 0.8;
-  if (catCorrect / n < THRESHOLD || sentCorrect / n < THRESHOLD) {
-    console.error(`Eval below ${THRESHOLD * 100}% threshold.`);
+  if (result.belowThreshold) {
+    console.error(`Eval below ${EVAL_THRESHOLD * 100}% threshold.`);
     process.exit(1);
   }
 }
