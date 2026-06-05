@@ -28,6 +28,18 @@ export const SENTIMENTS: Sentiment[] = ["POSITIVE", "NEUTRAL", "NEGATIVE"];
 
 export type Theme = { id: string; name: string };
 
+// A single agent-step trace (one row of TraceLog).
+export type Trace = {
+  id: string;
+  feedbackId: string;
+  step: string;
+  model: string | null;
+  latencyMs: number | null;
+  input: string | null;
+  output: string | null;
+  createdAt: string;
+};
+
 export type FeedbackItem = {
   id: string;
   source: string;

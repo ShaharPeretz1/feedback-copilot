@@ -11,7 +11,9 @@ import {
   prettyEnum,
   type FeedbackItem,
   type ThemeRollup,
+  type Trace,
 } from "@/lib/types";
+import { prettyJson, stepLabel, totalLatency } from "@/lib/trace";
 
 const ALL = "";
 
@@ -304,38 +306,110 @@ export default function Home() {
               </div>
             )}
             {items.map((i) => (
-              <article key={i.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex flex-wrap items-center gap-2">
-                  {i.priority && <Badge className={PRIORITY_STYLE[i.priority]}>{i.priority}</Badge>}
-                  {i.sentiment && <Badge className={SENTIMENT_STYLE[i.sentiment]}>{i.sentiment}</Badge>}
-                  {i.category && <Badge>{prettyEnum(i.category)}</Badge>}
-                  {i.theme && (
-                    <Badge className="bg-indigo-50 text-indigo-700 ring-indigo-600/20">{i.theme.name}</Badge>
-                  )}
-                  {i.status === "NEW" && (
-                    <Badge className="bg-yellow-50 text-yellow-700 ring-yellow-600/20">untriaged</Badge>
-                  )}
-                </div>
-                <p className="mt-2 text-sm text-slate-800">{i.rawText}</p>
-                {i.summary && (
-                  <p className="mt-2 text-xs text-slate-500">
-                    <span className="font-medium text-slate-600">Summary:</span> {i.summary}
-                  </p>
-                )}
-                {i.suggestedReply && (
-                  <details className="mt-2 rounded-lg bg-slate-50 p-2">
-                    <summary className="cursor-pointer text-xs font-medium text-slate-600">
-                      Suggested reply
-                    </summary>
-                    <p className="mt-1 whitespace-pre-wrap text-xs text-slate-700">{i.suggestedReply}</p>
-                  </details>
-                )}
-              </article>
+              <FeedbackCard key={i.id} item={i} />
             ))}
           </div>
         </section>
       </div>
     </main>
+  );
+}
+
+function FeedbackCard({ item }: { item: FeedbackItem }) {
+  const [traces, setTraces] = useState<Trace[] | null>(null);
+  const [open, setOpen] = useState(false);
+  const [loadingTraces, setLoadingTraces] = useState(false);
+
+  const toggleTraces = async () => {
+    if (!open && traces === null) {
+      setLoadingTraces(true);
+      try {
+        const d = await fetch(`/api/traces?feedbackId=${item.id}`).then((r) => r.json());
+        setTraces(d.traces ?? []);
+      } finally {
+        setLoadingTraces(false);
+      }
+    }
+    setOpen((o) => !o);
+  };
+
+  return (
+    <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-center gap-2">
+        {item.priority && <Badge className={PRIORITY_STYLE[item.priority]}>{item.priority}</Badge>}
+        {item.sentiment && <Badge className={SENTIMENT_STYLE[item.sentiment]}>{item.sentiment}</Badge>}
+        {item.category && <Badge>{prettyEnum(item.category)}</Badge>}
+        {item.theme && (
+          <Badge className="bg-indigo-50 text-indigo-700 ring-indigo-600/20">{item.theme.name}</Badge>
+        )}
+        {item.status === "NEW" && (
+          <Badge className="bg-yellow-50 text-yellow-700 ring-yellow-600/20">untriaged</Badge>
+        )}
+      </div>
+      <p className="mt-2 text-sm text-slate-800">{item.rawText}</p>
+      {item.summary && (
+        <p className="mt-2 text-xs text-slate-500">
+          <span className="font-medium text-slate-600">Summary:</span> {item.summary}
+        </p>
+      )}
+      {item.suggestedReply && (
+        <details className="mt-2 rounded-lg bg-slate-50 p-2">
+          <summary className="cursor-pointer text-xs font-medium text-slate-600">Suggested reply</summary>
+          <p className="mt-1 whitespace-pre-wrap text-xs text-slate-700">{item.suggestedReply}</p>
+        </details>
+      )}
+      {item.status === "TRIAGED" && (
+        <div className="mt-2">
+          <button
+            onClick={toggleTraces}
+            className="text-xs font-medium text-indigo-600 underline-offset-2 hover:underline"
+          >
+            {open ? "Hide agent trace" : "Agent trace"}
+          </button>
+          {open && <TraceTimeline traces={traces} loading={loadingTraces} />}
+        </div>
+      )}
+    </article>
+  );
+}
+
+function TraceTimeline({ traces, loading }: { traces: Trace[] | null; loading: boolean }) {
+  if (loading) return <p className="mt-2 text-xs text-slate-400">Loading trace…</p>;
+  if (!traces || traces.length === 0)
+    return <p className="mt-2 text-xs text-slate-400">No trace recorded for this item.</p>;
+  return (
+    <div className="mt-2 space-y-2 border-l-2 border-slate-100 pl-3">
+      <p className="text-[11px] text-slate-400">
+        {traces.length} steps · {totalLatency(traces)}ms total
+      </p>
+      {traces.map((t, idx) => (
+        <div key={t.id} className="rounded-lg bg-slate-50 p-2">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold tabular-nums text-slate-400">{idx + 1}</span>
+            <span className="text-xs font-medium text-slate-700">{stepLabel(t.step)}</span>
+            {t.model && <Badge>{t.model}</Badge>}
+            {t.latencyMs != null && (
+              <span className="ml-auto text-[11px] tabular-nums text-slate-400">{t.latencyMs}ms</span>
+            )}
+          </div>
+          {(t.input || t.output) && (
+            <details className="mt-1">
+              <summary className="cursor-pointer text-[11px] text-slate-500">input / output</summary>
+              {t.input && (
+                <pre className="mt-1 overflow-x-auto whitespace-pre-wrap rounded bg-white p-1.5 text-[11px] text-slate-600 ring-1 ring-slate-100">
+                  in: {prettyJson(t.input)}
+                </pre>
+              )}
+              {t.output && (
+                <pre className="mt-1 overflow-x-auto whitespace-pre-wrap rounded bg-white p-1.5 text-[11px] text-slate-600 ring-1 ring-slate-100">
+                  out: {prettyJson(t.output)}
+                </pre>
+              )}
+            </details>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }
 

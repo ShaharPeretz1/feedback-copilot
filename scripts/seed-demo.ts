@@ -164,11 +164,12 @@ async function main() {
 
   const now = new Date();
   const themeImpact = new Map<string, { id: string; impact: number }>();
+  let traceSeq = 0; // increasing createdAt offset so traces order deterministically
 
   for (const t of THEMES) {
     const theme = await prisma.theme.create({ data: { name: t.name, summary: t.summary } });
     for (const it of t.items) {
-      await prisma.feedback.create({
+      const fb = await prisma.feedback.create({
         data: {
           rawText: it.rawText,
           source: it.source,
@@ -183,6 +184,41 @@ async function main() {
           processedAt: now,
         },
       });
+
+      // Per-step agent trace (what triageOne would have recorded).
+      const steps = [
+        {
+          step: "classify",
+          latencyMs: 200 + (it.rawText.length % 120),
+          input: it.rawText,
+          output: JSON.stringify({ sentiment: it.sentiment, category: it.category, priority: it.priority, summary: it.summary }),
+        },
+        {
+          step: "assignTheme",
+          latencyMs: 150 + (it.summary.length % 90),
+          input: it.summary,
+          output: JSON.stringify({ theme: t.name, isNew: false, reasoning: "Matches an existing theme on the same topic." }),
+        },
+        {
+          step: "draftReply",
+          latencyMs: 280 + (it.rawText.length % 140),
+          input: it.rawText,
+          output: JSON.stringify({ reply: it.suggestedReply }),
+        },
+      ];
+      for (const s of steps) {
+        await prisma.traceLog.create({
+          data: {
+            feedbackId: fb.id,
+            step: s.step,
+            model: "claude-3-5-haiku-latest",
+            latencyMs: s.latencyMs,
+            input: s.input,
+            output: s.output,
+            createdAt: new Date(now.getTime() + traceSeq++ * 1000),
+          },
+        });
+      }
     }
     const impact = impactScore(t.items.map((i) => ({ priority: i.priority, sentiment: i.sentiment })));
     themeImpact.set(t.name, { id: theme.id, impact });
