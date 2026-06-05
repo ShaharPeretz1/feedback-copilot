@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      # Dummy values: the build never connects (client-rendered UI + force-dynamic
+      # routes) and tests mock the agent, so no real secrets are needed in CI.
+      DATABASE_URL: postgresql://user:pass@localhost:5432/db
+      ANTHROPIC_API_KEY: dummy-key-for-build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci # runs `prisma generate` via postinstall
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build

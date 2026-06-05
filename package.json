@@ -11,7 +11,8 @@
     "db:push": "prisma db push",
     "db:seed": "tsx --env-file-if-exists=.env scripts/seed.ts",
     "db:seed:demo": "tsx --env-file-if-exists=.env scripts/seed-demo.ts",
-    "eval": "tsx --env-file-if-exists=.env scripts/eval.ts"
+    "eval": "tsx --env-file-if-exists=.env scripts/eval.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.1",
@@ -30,6 +31,7 @@
     "prisma": "^6.19.3",
     "tailwindcss": "^4",
     "tsx": "^4.22.4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.8"
   }
 }

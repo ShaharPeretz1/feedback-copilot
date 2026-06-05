@@ -17,6 +17,7 @@ ADR:
 
 - [ ] `npx tsc --noEmit` clean
 - [ ] `npm run lint` clean (0 errors)
+- [ ] `npm test` passes (added/updated tests for changed pure logic)
 - [ ] `npm run build` succeeds
 - [ ] Runtime check against the DB (new route/UI exercised); any test data cleaned up
 - [ ] Agent/integration features fail gracefully without a key (`ANTHROPIC_API_KEY` / `GITHUB_TOKEN`)

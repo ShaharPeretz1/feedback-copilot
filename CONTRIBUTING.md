@@ -25,12 +25,15 @@ Commit/PR titles use conventional-commit prefixes: `feat(scope):`, `fix(scope):`
 ```bash
 npx tsc --noEmit     # types clean
 npm run lint         # eslint clean (0 errors)
+npm test             # vitest unit tests pass
 npm run build        # next build succeeds
 ```
 
-Then a **runtime check** against the database for anything touching data or routes (run
-`npm run dev` and exercise the new endpoint/UI). If you seed rows to test, delete them
-afterward so the demo database stays clean.
+CI (`.github/workflows/ci.yml`) runs all of the above on every PR. Add or update unit tests
+under `tests/` when you change pure logic (scoring, eval, helpers). Then do a **runtime
+check** against the database for anything touching data or routes (run `npm run dev` and
+exercise the new endpoint/UI). If you seed rows to test, delete them afterward so the demo
+database stays clean.
 
 ## Writing an ADR
 
