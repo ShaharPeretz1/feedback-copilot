@@ -12,7 +12,7 @@ each significant decision captured in an [ADR](docs/adr/README.md). This file ma
   [feedback-copilot.vercel.app](https://feedback-copilot.vercel.app) via the GitHub↔Vercel
   integration.
 
-**How we work** (so the history stays legible)
+**How we work** (so the history stays legible — full rules in [CONTRIBUTING.md](CONTRIBUTING.md))
 
 1. One branch + one squash-merged PR per change; conventional-commit titles (`feat(...)`,
    `fix(...)`, `docs:`).
@@ -25,6 +25,21 @@ each significant decision captured in an [ADR](docs/adr/README.md). This file ma
 
 Repository: <https://github.com/ShaharPeretz1/feedback-copilot> ·
 Live: <https://feedback-copilot.vercel.app>
+
+---
+
+## Process & docs
+
+### [PR #16](https://github.com/ShaharPeretz1/feedback-copilot/pull/16) — Contributing guide + PR template
+ADR: — · Status: **Merged**
+- `CONTRIBUTING.md` encodes the branch → ADR → verify → CHANGELOG → squash-merge loop, the
+  verification checklist, and the graceful-failure / DB conventions.
+- `.github/pull_request_template.md` turns the checklist into a per-PR gate.
+
+### [PR #15](https://github.com/ShaharPeretz1/feedback-copilot/pull/15) — CHANGELOG ledger + ADR↔PR cross-links
+ADR: — · Status: **Merged**
+- Added this CHANGELOG as the master ledger; cross-linked every ADR to its PR and documented
+  the new-ADR process.
 
 ---
 
