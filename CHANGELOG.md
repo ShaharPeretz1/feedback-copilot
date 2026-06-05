@@ -30,6 +30,14 @@ Live: <https://feedback-copilot.vercel.app>
 
 ## Process & docs
 
+### [PR #17](https://github.com/ShaharPeretz1/feedback-copilot/pull/17) — Demo seed for all three dashboards
+ADR: — · Status: **Merged · Live**
+- `scripts/seed-demo.ts` (`npm run db:seed:demo`) populates pre-triaged feedback across 6
+  themes, monitoring events (suspect classification, misuse, runtime error, drift history),
+  and a ranked task backlog — so all three UIs are visibly populated **without a funded key**.
+  Idempotent; stands in for what the agents would produce.
+
+
 ### [PR #16](https://github.com/ShaharPeretz1/feedback-copilot/pull/16) — Contributing guide + PR template
 ADR: — · Status: **Merged**
 - `CONTRIBUTING.md` encodes the branch → ADR → verify → CHANGELOG → squash-merge loop, the
