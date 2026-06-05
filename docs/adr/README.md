@@ -16,7 +16,7 @@ the decision, what we chose, what we rejected, and the consequences we accept.
 | 0009 | Rank issues by impact (recurrence × severity)         | Accepted |
 | 0010 | System-monitoring model + event taxonomy              | Accepted |
 | 0011 | LLM-judge for suspect classifications & misuse        | Accepted |
-| 0012 | Accuracy drift via the eval golden set                | Proposed |
+| 0012 | Accuracy drift via the eval golden set                | Accepted |
 | 0013 | Ops layer: Task model + generation                    | Proposed |
 | 0014 | Export tasks to GitHub Issues                         | Proposed |
 

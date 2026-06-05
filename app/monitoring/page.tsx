@@ -24,6 +24,25 @@ async function getEvents(query: string): Promise<MonitorEvent[]> {
   return d.events ?? [];
 }
 
+type DriftPoint = { at: string; category: number; sentiment: number };
+
+async function getDriftHistory(): Promise<DriftPoint[]> {
+  const d = await fetch("/api/monitor?type=ACCURACY_DRIFT").then((r) => r.json());
+  const events: MonitorEvent[] = d.events ?? [];
+  // API returns newest-first; reverse to oldest-first for the sparkline.
+  return events
+    .map((e) => {
+      try {
+        const j = JSON.parse(e.detail ?? "{}");
+        return { at: e.createdAt, category: j.categoryAccuracy ?? 0, sentiment: j.sentimentAccuracy ?? 0 };
+      } catch {
+        return null;
+      }
+    })
+    .filter((p): p is DriftPoint => p !== null)
+    .reverse();
+}
+
 function formatDetail(detail: string | null): string | null {
   if (!detail) return null;
   try {
@@ -43,6 +62,8 @@ export default function MonitoringPage() {
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [drifting, setDrifting] = useState(false);
+  const [drift, setDrift] = useState<DriftPoint[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
 
   const query = useMemo(() => {
@@ -64,7 +85,38 @@ export default function MonitoringPage() {
     };
   }, [query]);
 
+  // Drift history is independent of the events filter.
+  useEffect(() => {
+    let cancelled = false;
+    getDriftHistory().then((d) => {
+      if (!cancelled) setDrift(d);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const reload = async () => setEvents(await getEvents(query));
+
+  const runDrift = async () => {
+    setDrifting(true);
+    setNotice(null);
+    try {
+      const res = await fetch("/api/agent/drift", { method: "POST" });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) setNotice(body?.error ?? "Drift check failed");
+      else
+        setNotice(
+          `Drift check: category ${Math.round(body.categoryAccuracy * 100)}%, sentiment ${Math.round(
+            body.sentimentAccuracy * 100
+          )}% over ${body.n} golden items.`
+        );
+      setDrift(await getDriftHistory());
+      await reload();
+    } finally {
+      setDrifting(false);
+    }
+  };
 
   const runScan = async () => {
     setScanning(true);
@@ -107,19 +159,30 @@ export default function MonitoringPage() {
             accuracy drift, and misuse — separate from customer feedback.
           </p>
         </div>
-        <button
-          onClick={runScan}
-          disabled={scanning}
-          className="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {scanning ? "Scanning…" : "Run monitor scan"}
-        </button>
+        <div className="flex shrink-0 gap-2">
+          <button
+            onClick={runDrift}
+            disabled={drifting}
+            className="rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {drifting ? "Checking…" : "Run drift check"}
+          </button>
+          <button
+            onClick={runScan}
+            disabled={scanning}
+            className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {scanning ? "Scanning…" : "Run monitor scan"}
+          </button>
+        </div>
       </header>
       {notice && (
         <p className="mb-4 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600 ring-1 ring-slate-200">
           {notice}
         </p>
       )}
+
+      {drift.length > 0 && <DriftPanel points={drift} />}
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Shown" value={events.length} />
@@ -199,6 +262,61 @@ export default function MonitoringPage() {
         })}
       </div>
     </main>
+  );
+}
+
+function DriftPanel({ points }: { points: DriftPoint[] }) {
+  const latest = points[points.length - 1];
+  return (
+    <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-slate-900">Classifier accuracy</h2>
+        <span className="text-[11px] text-slate-400">{points.length} check(s)</span>
+      </div>
+      <div className="mt-3 flex items-end gap-6">
+        <div className="flex gap-6">
+          <Metric label="Category" value={latest.category} />
+          <Metric label="Sentiment" value={latest.sentiment} />
+        </div>
+        <div className="ml-auto flex items-end gap-4">
+          <Sparkline values={points.map((p) => p.category)} label="cat" />
+          <Sparkline values={points.map((p) => p.sentiment)} label="sent" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: number }) {
+  const pct = Math.round(value * 100);
+  const tone = value < 0.8 ? "text-red-600" : "text-slate-900";
+  return (
+    <div>
+      <div className={`text-2xl font-bold tabular-nums ${tone}`}>{pct}%</div>
+      <div className="text-[11px] text-slate-500">{label}</div>
+    </div>
+  );
+}
+
+function Sparkline({ values, label }: { values: number[]; label: string }) {
+  const w = 80;
+  const h = 24;
+  // Accuracy is 0..1; map directly to the box height.
+  const pts =
+    values.length === 1
+      ? `0,${h - values[0] * h} ${w},${h - values[0] * h}`
+      : values
+          .map((v, i) => `${(i / (values.length - 1)) * w},${h - v * h}`)
+          .join(" ");
+  const last = values[values.length - 1];
+  const stroke = last < 0.8 ? "#dc2626" : "#4f46e5";
+  return (
+    <div className="text-center">
+      <svg width={w} height={h} className="overflow-visible">
+        <polyline points={pts} fill="none" stroke={stroke} strokeWidth="1.5" />
+      </svg>
+      <div className="text-[10px] text-slate-400">{label}</div>
+    </div>
   );
 }
 
