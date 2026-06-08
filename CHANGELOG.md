@@ -51,7 +51,15 @@ ADR: — · Status: **Merged**
 
 ---
 
-## Milestone 4 — Hardening & observability (PR #18–#21)
+## Milestone 4 — Hardening & observability (PR #18–#22)
+
+### [PR #22](https://github.com/ShaharPeretz1/feedback-copilot/pull/22) — Local agent scripts for monitoring & ops
+ADR: [0017](docs/adr/0017-claude-subscription-provider.md) (extends) · Status: **Merged · Live (data)**
+- `npm run monitor:local` / `drift:local` / `tasks:local` mirror `triage:local`: run the
+  monitor scan, accuracy-drift eval, and task generation on the Claude subscription (Agent SDK)
+  against the DB, so the Monitoring and Ops dashboards show real data too. Shared
+  `useSubscriptionBackend()` helper; `triage:local` refactored onto it.
+
 
 ### [PR #21](https://github.com/ShaharPeretz1/feedback-copilot/pull/21) — API auth gate + ingest hardening
 ADR: [0018](docs/adr/0018-api-auth-and-hardening.md) · Status: **Merged · Live**
