@@ -51,7 +51,14 @@ ADR: — · Status: **Merged**
 
 ---
 
-## Milestone 4 — Hardening & observability (PR #18–#20)
+## Milestone 4 — Hardening & observability (PR #18–#21)
+
+### [PR #21](https://github.com/ShaharPeretz1/feedback-copilot/pull/21) — API auth gate + ingest hardening
+ADR: [0018](docs/adr/0018-api-auth-and-hardening.md) · Status: **Merged · Live**
+- Middleware gates all mutating/agent API routes behind an `ADMIN_API_TOKEN` (reads stay
+  public); admin-key UI + `authedFetch`. Deterministic prompt-injection block at ingest
+  (422), best-effort rate limit, and baseline security headers.
+
 
 ### [PR #20](https://github.com/ShaharPeretz1/feedback-copilot/pull/20) — Run agents on a Claude subscription
 ADR: [0017](docs/adr/0017-claude-subscription-provider.md) · Status: **Merged · Live (data)**

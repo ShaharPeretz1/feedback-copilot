@@ -11,6 +11,7 @@ import {
   type MonitorEventType,
   type MonitorStatus,
 } from "@/lib/types";
+import { authedFetch } from "@/lib/client-auth";
 
 const TYPES: MonitorEventType[] = [
   "RUNTIME_ERROR",
@@ -102,7 +103,7 @@ export default function MonitoringPage() {
     setDrifting(true);
     setNotice(null);
     try {
-      const res = await fetch("/api/agent/drift", { method: "POST" });
+      const res = await authedFetch("/api/agent/drift", { method: "POST" });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) setNotice(body?.error ?? "Drift check failed");
       else
@@ -122,7 +123,7 @@ export default function MonitoringPage() {
     setScanning(true);
     setNotice(null);
     try {
-      const res = await fetch("/api/agent/monitor", { method: "POST" });
+      const res = await authedFetch("/api/agent/monitor", { method: "POST" });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) setNotice(body?.error ?? "Monitor scan failed");
       else
@@ -136,7 +137,7 @@ export default function MonitoringPage() {
   };
 
   const setStatus = async (id: string, status: MonitorStatus) => {
-    await fetch(`/api/monitor/${id}`, {
+    await authedFetch(`/api/monitor/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { screenForInjection } from "@/lib/security";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -66,6 +67,17 @@ export async function POST(req: NextRequest) {
 
   if (clean.length === 0) {
     return NextResponse.json({ error: "No valid feedback (rawText required)" }, { status: 400 });
+  }
+
+  // Block obvious prompt-injection at ingest before it ever reaches the agent.
+  for (const row of clean) {
+    const screen = screenForInjection(row.rawText);
+    if (screen.injection) {
+      return NextResponse.json(
+        { error: "Submission rejected: looks like a prompt-injection attempt, not feedback." },
+        { status: 422 }
+      );
+    }
   }
 
   await prisma.feedback.createMany({ data: clean });
