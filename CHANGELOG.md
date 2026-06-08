@@ -51,7 +51,15 @@ ADR: — · Status: **Merged**
 
 ---
 
-## Milestone 4 — Hardening & observability (PR #18–#19)
+## Milestone 4 — Hardening & observability (PR #18–#20)
+
+### [PR #20](https://github.com/ShaharPeretz1/feedback-copilot/pull/20) — Run agents on a Claude subscription
+ADR: [0017](docs/adr/0017-claude-subscription-provider.md) · Status: **Merged · Live (data)**
+- `npm run triage:local` runs the real triage pipeline via the Claude Agent SDK (subscription
+  auth, no metered API key) against the DB, so dashboards show genuine Claude output. Swappable
+  `structuredCall` backend (`setStructuredCallImpl`); Agent SDK imported only by the local
+  script, never bundled into the deployed app. Local/batch only (SDK spawns the CLI).
+
 
 ### [PR #19](https://github.com/ShaharPeretz1/feedback-copilot/pull/19) — Agent trace timeline
 ADR: [0016](docs/adr/0016-trace-timeline.md) · Status: **Merged · Live**

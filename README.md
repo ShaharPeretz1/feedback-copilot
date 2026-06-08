@@ -53,6 +53,23 @@ npm run dev                 # http://localhost:3000
 
 Then click **Run triage** in the UI (or `curl -X POST localhost:3000/api/agent/triage`).
 
+## Run the agents for real — on your Claude subscription (no API bill)
+
+If you have a Claude Pro/Max plan, you can triage with **real Claude** using your included
+Agent SDK credit instead of a metered `ANTHROPIC_API_KEY`:
+
+```bash
+claude setup-token        # one-time: log in / authorize (or just be logged into the claude CLI)
+# ensure ANTHROPIC_API_KEY is UNSET (it overrides subscription auth)
+npm run triage:local      # triages all NEW feedback via the Claude Agent SDK, into the DB
+```
+
+This swaps the `structuredCall` backend to the [Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/typescript)
+(which auths via your `claude` CLI) and runs the normal pipeline against your database, so the
+dashboards then display genuinely real classifications, themes, and per-step traces. It runs
+**locally/batch only** — the SDK spawns the CLI, so it isn't used inside the serverless app
+(see [ADR-0017](docs/adr/0017-claude-subscription-provider.md)).
+
 ## Evals
 
 ```bash
