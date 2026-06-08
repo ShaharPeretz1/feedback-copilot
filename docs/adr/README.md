@@ -27,6 +27,7 @@ the [CHANGELOG](../../CHANGELOG.md).
 | [0016](0016-trace-timeline.md) | Surface the agent trace timeline in the UI          | Accepted | [#19](https://github.com/ShaharPeretz1/feedback-copilot/pull/19) |
 | [0017](0017-claude-subscription-provider.md) | Run the agents on a Claude subscription (Agent SDK), locally | Accepted | [#20](https://github.com/ShaharPeretz1/feedback-copilot/pull/20) |
 | [0018](0018-api-auth-and-hardening.md) | API auth gate + ingest hardening                    | Accepted | [#21](https://github.com/ShaharPeretz1/feedback-copilot/pull/21) |
+| [0019](0019-groq-free-tier-backend.md) | Free-tier Groq backend for the deployed app         | Accepted | [#23](https://github.com/ShaharPeretz1/feedback-copilot/pull/23) |
 
 (Statuses move from Proposed to Accepted as each PR merges.)
 

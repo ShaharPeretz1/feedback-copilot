@@ -51,7 +51,15 @@ ADR: — · Status: **Merged**
 
 ---
 
-## Milestone 4 — Hardening & observability (PR #18–#22)
+## Milestone 4 — Hardening & observability (PR #18–#23)
+
+### [PR #23](https://github.com/ShaharPeretz1/feedback-copilot/pull/23) — Free-tier Groq backend
+ADR: [0019](docs/adr/0019-groq-free-tier-backend.md) · Status: **Merged**
+- Adds Groq (free tier, OpenAI-compatible, serverless-friendly) as a third `structuredCall`
+  backend, env-selected (`GROQ_API_KEY` → Groq). Makes the **deployed** app live-functional for
+  free. Lazy Anthropic + Groq clients (no key needed unless that provider is used). Eval harness
+  can score Groq too.
+
 
 ### [PR #22](https://github.com/ShaharPeretz1/feedback-copilot/pull/22) — Local agent scripts for monitoring & ops
 ADR: [0017](docs/adr/0017-claude-subscription-provider.md) (extends) · Status: **Merged · Live (data)**

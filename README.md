@@ -74,6 +74,20 @@ display genuinely real classifications, themes, traces, monitoring findings, and
 **locally/batch only** — the SDK spawns the CLI, so it isn't used inside the serverless app
 (see [ADR-0017](docs/adr/0017-claude-subscription-provider.md)).
 
+### LLM backends
+
+`structuredCall` picks a backend by environment, so the same agent code runs anywhere:
+
+| Backend | When | Cost |
+| ------- | ---- | ---- |
+| Claude Agent SDK (subscription) | local `*:local` scripts | included in Claude Pro/Max |
+| **Groq** (free tier) | deployed app, when `GROQ_API_KEY` is set | **free** (no card) — powers the public buttons |
+| Anthropic API | fallback when only `ANTHROPIC_API_KEY` is set | metered |
+
+See [ADR-0019](docs/adr/0019-groq-free-tier-backend.md). To make the deployed site live for
+free, create a key at [console.groq.com](https://console.groq.com) and set `GROQ_API_KEY` in the
+Vercel env.
+
 ## Evals
 
 ```bash
