@@ -13,6 +13,9 @@
     "db:seed:demo": "tsx --env-file-if-exists=.env scripts/seed-demo.ts",
     "eval": "tsx --env-file-if-exists=.env scripts/eval.ts",
     "triage:local": "tsx --env-file-if-exists=.env.local scripts/triage-local.ts",
+    "monitor:local": "tsx --env-file-if-exists=.env.local scripts/monitor-local.ts",
+    "drift:local": "tsx --env-file-if-exists=.env.local scripts/drift-local.ts",
+    "tasks:local": "tsx --env-file-if-exists=.env.local scripts/tasks-local.ts",
     "test": "vitest run"
   },
   "dependencies": {

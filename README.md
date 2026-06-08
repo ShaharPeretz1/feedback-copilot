@@ -61,12 +61,16 @@ Agent SDK credit instead of a metered `ANTHROPIC_API_KEY`:
 ```bash
 claude setup-token        # one-time: log in / authorize (or just be logged into the claude CLI)
 # ensure ANTHROPIC_API_KEY is UNSET (it overrides subscription auth)
-npm run triage:local      # triages all NEW feedback via the Claude Agent SDK, into the DB
+npm run triage:local      # Feedback:   triage all NEW feedback
+npm run monitor:local     # Monitoring: LLM-judge + misuse scan over recent feedback
+npm run drift:local       # Monitoring: eval golden set → accuracy-drift event
+npm run tasks:local       # Ops:        generate the task backlog from themes + events
 ```
 
-This swaps the `structuredCall` backend to the [Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/typescript)
-(which auths via your `claude` CLI) and runs the normal pipeline against your database, so the
-dashboards then display genuinely real classifications, themes, and per-step traces. It runs
+Each `*:local` script swaps the `structuredCall` backend to the
+[Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/typescript) (which auths via your
+`claude` CLI) and runs the normal pipeline against your database, so all three dashboards then
+display genuinely real classifications, themes, traces, monitoring findings, and tasks. They run
 **locally/batch only** — the SDK spawns the CLI, so it isn't used inside the serverless app
 (see [ADR-0017](docs/adr/0017-claude-subscription-provider.md)).
 

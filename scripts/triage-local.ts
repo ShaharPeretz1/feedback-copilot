@@ -11,20 +11,13 @@
  * at the same database the app uses (loaded from .env.local), and ANTHROPIC_API_KEY UNSET
  * (it would override subscription auth and bill the API).
  */
-import { setStructuredCallImpl } from "@/lib/agent/structured";
-import { structuredCallAgent } from "@/lib/agent/agent-sdk";
+import { applySubscriptionBackend } from "@/lib/agent/subscription";
 import { triagePending } from "@/lib/agent/triage";
 import { prisma } from "@/lib/db";
 
-setStructuredCallImpl(structuredCallAgent);
+applySubscriptionBackend();
 
 async function main() {
-  if (process.env.ANTHROPIC_API_KEY) {
-    console.error(
-      "ANTHROPIC_API_KEY is set — it overrides subscription auth and bills the API. Unset it and retry."
-    );
-    process.exit(1);
-  }
   const pending = await prisma.feedback.count({ where: { status: "NEW" } });
   if (pending === 0) {
     console.log("No NEW feedback to triage. Add some (or `npm run db:seed`) first.");
