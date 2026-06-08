@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock the Anthropic client module so importing structured.ts doesn't construct a real
 // client (which would require an API key at import time).
-vi.mock("@/lib/anthropic", () => ({ anthropic: {}, MODEL: "test-model" }));
+vi.mock("@/lib/anthropic", () => ({ getAnthropic: () => ({}), MODEL: "test-model" }));
 
 import {
   setStructuredCallImpl,
