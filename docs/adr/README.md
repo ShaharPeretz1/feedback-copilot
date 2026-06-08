@@ -26,6 +26,7 @@ the [CHANGELOG](../../CHANGELOG.md).
 | [0015](0015-tests-and-ci.md) | Unit tests (Vitest) + GitHub Actions CI               | Accepted | [#18](https://github.com/ShaharPeretz1/feedback-copilot/pull/18) |
 | [0016](0016-trace-timeline.md) | Surface the agent trace timeline in the UI          | Accepted | [#19](https://github.com/ShaharPeretz1/feedback-copilot/pull/19) |
 | [0017](0017-claude-subscription-provider.md) | Run the agents on a Claude subscription (Agent SDK), locally | Accepted | [#20](https://github.com/ShaharPeretz1/feedback-copilot/pull/20) |
+| [0018](0018-api-auth-and-hardening.md) | API auth gate + ingest hardening                    | Accepted | [#21](https://github.com/ShaharPeretz1/feedback-copilot/pull/21) |
 
 (Statuses move from Proposed to Accepted as each PR merges.)
 

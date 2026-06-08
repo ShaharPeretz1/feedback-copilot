@@ -11,6 +11,7 @@ import {
   type Task,
   type TaskStatus,
 } from "@/lib/types";
+import { authedFetch } from "@/lib/client-auth";
 
 const TASK_STATUSES: TaskStatus[] = ["TODO", "IN_PROGRESS", "DONE", "DISMISSED"];
 
@@ -72,7 +73,7 @@ export default function OpsPage() {
     setGenerating(true);
     setNotice(null);
     try {
-      const res = await fetch("/api/agent/tasks", { method: "POST" });
+      const res = await authedFetch("/api/agent/tasks", { method: "POST" });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) setNotice(body?.error ?? "Task generation failed");
       else setNotice(`Generated ${body.generated} task(s) (${body.skipped} skipped as duplicates/invalid).`);
@@ -83,7 +84,7 @@ export default function OpsPage() {
   };
 
   const setStatus = async (id: string, status: TaskStatus) => {
-    await fetch(`/api/tasks/${id}`, {
+    await authedFetch(`/api/tasks/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
@@ -93,7 +94,7 @@ export default function OpsPage() {
 
   const exportTask = async (id: string) => {
     setNotice(null);
-    const res = await fetch(`/api/tasks/${id}/export`, { method: "POST" });
+    const res = await authedFetch(`/api/tasks/${id}/export`, { method: "POST" });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) setNotice(body?.error ?? "Export failed");
     else setNotice(body?.alreadyExported ? "Already exported." : "Exported to GitHub Issues.");

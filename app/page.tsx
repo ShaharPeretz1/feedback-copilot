@@ -14,6 +14,7 @@ import {
   type Trace,
 } from "@/lib/types";
 import { prettyJson, stepLabel, totalLatency } from "@/lib/trace";
+import { authedFetch } from "@/lib/client-auth";
 
 const ALL = "";
 
@@ -106,7 +107,7 @@ export default function Home() {
       .map((b) => b.trim())
       .filter(Boolean);
     if (blocks.length === 0) return;
-    const res = await fetch("/api/feedback", {
+    const res = await authedFetch("/api/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ items: blocks.map((rawText) => ({ rawText })) }),
@@ -123,7 +124,7 @@ export default function Home() {
     setError(null);
     setTriaging(true);
     try {
-      const res = await fetch("/api/agent/triage", { method: "POST" });
+      const res = await authedFetch("/api/agent/triage", { method: "POST" });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) setError(body?.error ?? "Triage failed");
       else if (body?.failed > 0)
